@@ -30,7 +30,7 @@ Usually the attacker doesnt have access to or knows that application B exists bu
 4. Goal: get the .ssh private key from third_party_app.py
 
 
-#### Exploitation
+### Exploitation
 1. Start the vulnerable app and the third party app: 
 `python3 vulnerable_app.py`
 ```
@@ -46,24 +46,26 @@ Serving on port 8000
 Note the ports, each of the apps are serving on, and to avoid confusion, lets use `127.0.0.1` for vulnerable_app and `localhost` for third_party_app. 
 
 When looking at vulnerable_app.py we see it uses a `/fetch` path, and it gets the `url` value, fetches the information afrom that URL and then returns its content. 
-1. Lets see if we can fetch the information from https://github.com :
+2. Lets see if we can fetch the information from https://github.com :
 `http://127.0.0.1:5000/fetch?url=https://github.com`
 
 When running this in the browser we notice the github.com page loads, but when click on "Princing" from the page's top menu, we get 404 not found. This is because it just retrieves the content from github.com, and then it shows it in the browser, nothing more. 
 
-2. The third_party_app.py is a simple http python server that serves the files in its runtime folder.    
+3. The third_party_app.py is a simple http python server that serves the files in its runtime folder.    
  Lets start it:
  `python3 third_party_app.py`
 
- 3. Going back to our attacker, we mentioned that he doesnt have direct access to third_party_app so what he will try to do is to use vulnerable_app to make a request to third_party_app:
+4. Going back to our attacker, we mentioned that he doesnt have direct access to third_party_app so what he will try to do is to use vulnerable_app to
+ make a request to third_party_app:
  `http://127.0.0.1:5000/fetch?url=http://localhost:8000`
 
- As you can see, because there is no URL whitelisting we can make requests to another server from the company that is on a local server. Now you can see the file structure of third_party_app. Furthermore if any important information is on that server, you can list it and use it to laterally move. 
+ As you can see, because there is no URL whitelisting we can make requests to another server from the company that is on a local server. Now you can see
+ the file structure of third_party_app. Furthermore if any important information is on that server, you can list it and use it to laterally move. 
 
- 4. We see there is a folder .ssh and we list it:    
+ 5. We see there is a folder .ssh and we list it:    
  `http://127.0.0.1:5000/fetch?url=http://localhost:8000/.ssh/`
 
- 5. Inside it we have a private and a public key so we list them: 
+ 6. Inside it we have a private and a public key so we list them: 
  `http://127.0.0.1:5000/fetch?url=http://localhost:8000/.ssh/id_ed25519`
  `http://127.0.0.1:5000/fetch?url=http://localhost:8000/.ssh/id_ed25519.pub`
 
@@ -75,11 +77,11 @@ When running this in the browser we notice the github.com page loads, but when c
  To give you an example, in our case, I added a file called exploit.py. if you look at the code it simply combines the base url `http://127.0.0.1:5000/fetch` + the url you specify in the script and it returns the result. Same thing you did manually. 
 
 
- #### Patching
+ ### Patching
 
  1. Code adjustments:   
-To patch vulnerable_app we need to update its code so it whitelists a specific URL or multiple URLs.
-Specifically, the code below has only github.com whitelisted and then bellow, it checks if the URL you fed to the url parameter was on the whitelist, otherwise it returns "Bad Request, Invalid URL"
+ To patch vulnerable_app we need to update its code so it whitelists a specific URL or multiple URLs.Specifically, the code below has only github.com  
+ whitelisted and then bellow, it checks if the URL you fed to the url parameter was on the whitelist, otherwise it returns "Bad Request, Invalid URL"
 
 ```
 ALLOWED_DOMAINS = {'github.com'}
