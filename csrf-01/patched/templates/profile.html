@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+</head>
+<body>
+    <h1>Profile</h1>
+    <p>ID: {{ user_data.user_id }}</p>
+    <p>Email: {{ user_data.email }}</p>
+
+    <form action="{{ url_for('update_email') }}" method="post">
+        <p>CSRF Token: {{ csrf_token() }}</p>
+        <label for="new_email">New email:</label>
+        <input type="email" name="new_email" id="new_email" required>
+        <input type="hidden" name="access_token" value="{{ access_token }}">
+        <input type="submit" value="Update Email">
+    </form>
+
+    <a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>
