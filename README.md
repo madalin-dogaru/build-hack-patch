@@ -196,4 +196,4 @@ def update_email():
 ```
 With these changes in place, the server will now expect a valid CSRF token to be submitted with each update_email request. This effectively prevents CSRF attacks, as the attacker cannot forge a valid CSRF token without having access to the server-generated token value.
 
-Try the same attack and you will see you are getting about not having the correct CSRF token. 
+Try the same attack as before and you will be getting an error about not having the correct CSRF token. 
