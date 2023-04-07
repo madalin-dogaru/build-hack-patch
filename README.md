@@ -183,7 +183,7 @@ def update_email():
 
     flash("Email updated successfully.")
     return redirect(url_for('profile'))
-    ```
+```
  3. Patch our profile.html template to include the CSRF token in the form:
 ```
 <form action="{{ url_for('update_email') }}" method="post">
