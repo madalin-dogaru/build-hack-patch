@@ -2,6 +2,7 @@
 ### Table of Contents
 - [SSRF-01 exercise](https://github.com/madalin-dogaru/build-hack-patch/blob/master/README.md#ssrf-01---server-side-request-forgery) 
 - [CSRF-01 exercise](https://github.com/madalin-dogaru/build-hack-patch#csrf-01---cross-site-request-forgery)
+- [OAuth-01 exercise](https://github.com/madalin-dogaru/build-hack-patch#oauth-01---state-parameter-logic-flaw)
 
 This series of tutorials aim to introduce common cybersecurity vulnerabilities and their fixes. It is designed for beginners and follows a three-step process for each vulnerability:
 
