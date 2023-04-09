@@ -197,3 +197,61 @@ def update_email():
 With these changes in place, the server will now expect a valid CSRF token to be submitted with each update_email request. This effectively prevents CSRF attacks, as the attacker cannot forge a valid CSRF token without having access to the server-generated token value.
 
 Try the same attack as before and you will be getting an error about not having the correct CSRF token. 
+
+## OAuth-01 - (State Parameter Logic Flaw)
+A logic flaw, is a mistake or oversight in the design or implementation of an application's code that leads to unintended behavior or security vulnerabilities. It typically arises when the code does not properly handle certain conditions, user inputs, or data flows, causing the application to function incorrectly or in a way that the developer did not intend.
+
+### Build It. 
+We have a simple **vulnerable_app.py** with 2 users, alex and admin, who can authorize the vulnerable_app against **oauth_provider.py** to get their profile information.
+
+### Hack It.
+Before we begin, start both applications.
+
+1. Go to the Vulnerable App's main page, http://localhost:8080 and click on the login button. This will redirect you to the OAuth provider's /authorize endpoint:
+```
+http://localhost:5050/authorize?client_id=clientid00&response_type=token&state=state&redirect_uri=http://localhost:8080/callback
+```
+2. On the authorization page, enter Alex's credentials (alex:bucharest) and click "Authorize".
+3. The OAuth provider's /issue_token endpoint was called with the following POST request (use Burp to intercep it):
+```
+POST /issue_token HTTP/1.1
+Host: localhost:5050
+..[code snipet]
+client_id=clientid00&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fcallback&state=state&username=alex&password=bucharest
+
+```
+Set in the above POST the state parameter to "admin"(state=state), which represents the username of the admin account and click send with Burp's repeater.
+
+
+4. The OAuth provider will issue an access token and will redirect you back to the Vulnerable App's `/callback` endpoint with the access token and state parameter in the URL:
+```
+http://localhost:8080/callback?access_token=a5bf2e40-61aa-4956-a743-7daf0c7eb30f&token_type=Bearer&state=admin
+
+```
+5. The Vulnerable App will then call the OAuth provider's `/userinfo` endpoint with the access token you received but because we dont have a more complex app, lets do manually what vulnerable_app would have done. Go in the browser and access this URL: 
+```
+http://localhost:5050/userinfo?access_token=a5bf2e40-61aa-4956-a743-7daf0c7eb30f
+```
+
+6. Due to the authentication bypass vulnerability, the state parameter was set to "admin" in step 3, causing the oauth_provider.py to believe provide you admin's information. 
+```
+{
+  "email": "admin@example.com",
+  "username": "admin"
+}
+```
+
+### Patch It.
+This are the steps that we performed to patch the logic flaw. 
+
+1. Store the 'state' parameter in the session: In the `/callback` function of the vulnerable_app.py script, the 'state' parameter from the request was not checked or stored. To fix this, we stored the 'state' parameter in the session before redirecting the user to the oauth_provider.py. This way, the application can later verify if the received state matches the stored state.   
+
+2. Check the 'state' parameter in the oauth_provider.py: In the oauth_provider.py script, we checked the 'state' parameter received in the `/authorize` endpoint. We modified the function to only return the authorization form if the 'state' parameter matches the expected value ('state' in this case). If the 'state' does not match, an error message is returned instead.   
+
+3. Return the 'state' parameter with the authorization code: In the `/issue_code` function of the oauth_provider.py script, we added the 'state' parameter to the redirect URL. This way, the client application receives the 'state' parameter along with the authorization code.   
+
+4. Check the 'state' parameter in the client application: In the `/callback` function of the `vulnerable_app.py script`, we added a check for the 'state' parameter received from the OAuth provider. If the 'state' parameter does not match the stored 'state' in the session, an "Access denied" message is returned, and the user is not authenticated.    
+
+5. Remove hardcoded values: In the /token function of the `oauth_provider.py` script, the 'code' value was hardcoded. We modified the function to check if the 'code' parameter exists in the `AUTHORIZATION_CODES` dictionary. If the 'code' is not found in the dictionary, an "Invalid grant_type or code" error message is returned.   
+
+By implementing these changes, we have ensured that the 'state' parameter is correctly checked, preventing attackers from bypassing authentication by manipulating the 'state' value.
